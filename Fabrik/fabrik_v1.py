@@ -6,7 +6,6 @@ from std_msgs.msg import Float64 as F64
 from sensor_msgs.msg import Joy
 from F_Arm import *
 from std_msgs.msg import String
-from coordinate import *
 import math
 
 new_massage = False
