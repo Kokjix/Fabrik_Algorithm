@@ -2,22 +2,42 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import math 
+import math
+import rospy 
+from std_msgs.msg import Float64 as F64
 
-global TOLERANCE
+#global TOLERANCE
 
-TOLERANCE = 0.1
+#TOLERANCE = 0.001
 
-class F_ARM(object):
+class F_ARM(object): #ileri kinematik için yazılmıs joint açıları ve değişimlerini tutan class
 
     def __init__(self):
         self.joint_angles = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         self.delta_thetas = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        self.link_lenghts = [26.5, 28.1831, 20.0]
+        #self.link_lenghts = [26.5, 28.1831, 20.0]
+        self.current_pos = [0.0, 0.0, 0.0]
+    """
+    def update_position(self):
+        theta_1 = self.joint_angles[0]
+        theta_2 = self.joint_angles[1] + math.pi/2
+        theta_3 = self.joint_angles[2] - math.pi/2
+        #self.link_2math.sin(self.theta[0]+self.theta[1])+self.link_1math.sin(self.theta[0])
+        z = 27.3 * math.sin(theta_2+theta_3)+ 33.5 * math.sin(theta_2)
+        Z = z + 7
+        r_vector = 27.3 * math.cos(theta_2+theta_3) + 33.5 * math.cos(theta_2)
+        X = r_vector * math.cos(theta_1)
+        Y = r_vector * math.sin(theta_1)
+        #self.link_2math.cos(self.theta[0]+self.theta[1])+self.link_1math.cos(self.theta[0])
+        self.current_pos[0] = X
+        self.current_pos[1] = Y
+        self.current_pos[2] = Z
+        #self.desired_pos = self.current_pos
+    """
+        
 
 
-
-class JOY(object):
+class JOY(object): # joy classı tuşları ve axisleri tutuyor
 
     def __init__(self):
         self.axes = [10.0, 10.0, 10.0, 10.0, 10.0, 10.0]
@@ -54,7 +74,7 @@ class JOY(object):
 
 
 
-
+"""
 class COORDINATS(object):
     def __init__(self, X, Y, Z):
         self.coordinats = [X, Y, Z]
@@ -68,8 +88,28 @@ class COORDINATS(object):
     def get_z(self):
         return self.coordinats[2]
 
+"""
 
-def calculate_distance(point1, point2):
+
+            
+            
+            
+            
+    
+
+def update_position(theta_1, theta_2, theta_3): #Çalışmayan fonsiyon normalde ileri ile ters kinematik geçişi için ayarlanmış fonksiyonken bu geçiş iptal edildiği için şua anda kullanım dışı
+    z = 27.3 * math.sin(theta_2+theta_3)+ 33.5 * math.sin(theta_2)
+    z = z + 7
+    r_vector = 27.3 * math.cos(theta_2+theta_3) + 33.5 * math.cos(theta_2)
+    x = r_vector * math.cos(theta_1)
+    y = r_vector * math.sin(theta_1)
+
+    li = [x, y, z]
+    return li
+
+
+
+def calculate_distance(point1, point2): # noktalar arası uzunluğun hesaplanması
     a = math.pow(point1[0] - point2[0], 2) + math.pow(point1[1] - point2[1], 2) + math.pow(point1[2] - point2[2], 2)
 
     b = math.sqrt(a)
@@ -78,34 +118,35 @@ def calculate_distance(point1, point2):
 
 
 
-def dot_product(point1, point2):
+def dot_product(point1, point2): # skaler çarpım
     
 
     result = 0.0
 
-    result += point1[0] * point2[0]
+    result += (point1[0] * point2[0]) + (point1[1] * point2[1]) + (point1[2] * point2[2])
+    """
     result += point1[1] * point2[1]   #Tek satırda yazmayı dene 
     result += point1[2] * point2[2]
-
+    """
     return result
 
-def angle_of_vectors(point1, point2):
+def angle_of_vectors(point1, point2): # vektörlar arası açının hesaplanması
     
     base_point = [0,0,0]
     
     lenght_of_1 = calculate_distance(point1, base_point)
     lenght_of_2 = calculate_distance(point2, base_point)
 
-    angle = (math.acos(dot_product(point1,point2)/(lenght_of_1 * lenght_of_2))*180)/math.pi
+    angle = math.acos(dot_product(point1,point2)/(lenght_of_1 * lenght_of_2))* (180/math.pi)
 
     return angle
        
 
-def rotate_on_xy(to_be_rotated, angle):
+def rotate_on_xy(to_be_rotated, angle): # rotasyon matrisi
     radian_angle = angle * math.pi/180
 
-    new_x = to_be_rotated[0] * math.cos(radian_angle) - to_be_rotated[1] * math.sin(radian_angle)
-    new_y = to_be_rotated[0] * math.sin(radian_angle) + to_be_rotated[1] * math.cos(radian_angle)       
+    new_x = (to_be_rotated[0] * math.cos(radian_angle)) - (to_be_rotated[1] * math.sin(radian_angle))
+    new_y = (to_be_rotated[0] * math.sin(radian_angle)) + (to_be_rotated[1] * math.cos(radian_angle))       
 
 
     to_be_rotated[0] = new_x
@@ -113,7 +154,7 @@ def rotate_on_xy(to_be_rotated, angle):
 
     return to_be_rotated
 
-def crd_multipication(point, factor):
+def crd_multipication(point, factor): # vektörün skalerr bir sayı ile çarpımı sonucu koordinatlarını vermekte 
     cord = []
     new_x = factor * point[0]
     new_y = factor * point[1]
@@ -125,7 +166,7 @@ def crd_multipication(point, factor):
     
     return cord
 
-def cosinus_theorem(center, one, two):
+def cosinus_theorem(center, one, two): # kosinüs teoremi
     a = calculate_distance(center, one)
     b = calculate_distance(center, two)
     c = calculate_distance(one, two)
@@ -135,7 +176,7 @@ def cosinus_theorem(center, one, two):
     return my_angle
 
 
-def find_angle(center, before, nex, joint_1_angle):
+def find_angle(center, before, nex, joint_1_angle): # Fabrik sonrası açı bulmak için yapılan fonksiyon
     my_angle = cosinus_theorem(center, before, nex)
 
     new_before = [before[0] - center[0], before[1] - center[1], before[2] - center[2]]
@@ -155,19 +196,21 @@ def find_angle(center, before, nex, joint_1_angle):
 
 
 
-def FABRIK_algorithm(my_joints, link_lenghts, new_end_point_pos, REACH):
-    global TOLERANCE
+def FABRIK_algorithm(my_joints, link_lenghts, new_end_point_pos, REACH): #FABRIK algoritması psuedo kodun yazıya geçilmiş hali http://andreasaristidou.com/publications/papers/FABRIK.pdf burdan alınmıştır.
+    #global TOLERANCE
+    TOLERANCE = 0.1
     i = 0
     r = 0
     lamb = 0
     distance_from_begining = abs(calculate_distance(new_end_point_pos, my_joints[0]))
-
+    
     if distance_from_begining > REACH:
         for i in range(len(my_joints)):
             r = abs(calculate_distance(new_end_point_pos, my_joints[i]))
 
             lamb = link_lenghts[i]/r
             my_joints[i + 1] = crd_multipication(my_joints[i], 1-lamb) + crd_multipication(new_end_point_pos, lamb)
+    
     else:
         b = my_joints[0]
         distance_to_target = calculate_distance(new_end_point_pos, my_joints[len(my_joints) - 1])
@@ -182,19 +225,19 @@ def FABRIK_algorithm(my_joints, link_lenghts, new_end_point_pos, REACH):
                 my_joints[i][0] = crd_multipication(my_joints[i+1], 1 - lamb)[0] + crd_multipication(my_joints[i], lamb)[0]
                 my_joints[i][1] = crd_multipication(my_joints[i+1], 1 - lamb)[1] + crd_multipication(my_joints[i], lamb)[1]
                 my_joints[i][2] = crd_multipication(my_joints[i+1], 1 - lamb)[2] + crd_multipication(my_joints[i], lamb)[2]
-
+                #print(my_joints)
+                
             my_joints[0] = b
 
-            for i in range(len(my_joints) - 1):
+            for i in range(0,len(my_joints) - 1):
                 r = abs(calculate_distance(my_joints[i + 1], my_joints[i]))
                 lamb = link_lenghts[i]/ r
 
                 my_joints[i + 1][0] = crd_multipication(my_joints[i], 1 - lamb)[0] + crd_multipication(my_joints[i+1], lamb)[0]
                 my_joints[i + 1][1] = crd_multipication(my_joints[i], 1 - lamb)[1] + crd_multipication(my_joints[i+1], lamb)[1]
                 my_joints[i + 1][2] = crd_multipication(my_joints[i], 1 - lamb)[2] + crd_multipication(my_joints[i+1], lamb)[2]
-
+            rospy.loginfo_throttle(2, "--------------------------------------------------")    
+            rospy.loginfo_throttle(2,"Target XF = %s YF = %s ZF = %s" %(new_end_point_pos[0], new_end_point_pos[1], new_end_point_pos[2])) # verilen end effektör konumun Fabriktei dönüşümünü görmek için eklendi   
+            
             distance_to_target = abs(calculate_distance(my_joints[len(my_joints) - 1], new_end_point_pos))
-
-
-
 

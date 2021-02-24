@@ -18,7 +18,7 @@ joy_msg = JOY()
 arm = F_ARM()
 
 
-global X, Y, Z
+global X, Y, Z # end effektörün artırılan koordinatları
 
 
 
@@ -30,11 +30,11 @@ def joy_callback(msg):
     global X, Y, Z
     
 
-    X = X + msg.axes[3] * (-0.05)
-    Y = Y + msg.axes[0] * 0.05
-    Z = Z + msg.axes[1] * 0.05
-    joy_msg.buttons[7] = msg.buttons[7]
-    arm.delta_thetas[0] = msg.axes[0] * 0.005
+    X = X + msg.axes[3] * (-0.05) # X kooridnatı kontrolcünün sağ analoğunun sağ soludur.
+    Y = Y + msg.axes[0] * 0.05 # Y kooridnatı kontrolcünün sol analoğunun sağ soludur.
+    Z = Z + msg.axes[1] * 0.05 # Z kooridnatı kontrolcünün sol analoğunun yukarı aşağıdır.
+    joy_msg.buttons[7] = msg.buttons[7] # kontrolcünün R2 tuşu
+    arm.delta_thetas[0] = msg.axes[0] * 0.005 # kontrolcünün ileri kinematik için atanan tuşları
     arm.delta_thetas[1] = msg.axes[1] * 0.005
     arm.delta_thetas[2] = msg.axes[4] * 0.005
     arm.delta_thetas[3] = -msg.axes[4] * 0.004
@@ -42,7 +42,7 @@ def joy_callback(msg):
     arm.delta_thetas[5] = msg.axes[6] * 0.006
     
     
-    joy_msg.buttons[0] = msg.buttons[4] 
+    joy_msg.buttons[0] = msg.buttons[4] #bu iki tuşun simulasyonda karşılığı yok ancak serialde sonsuz eksen için varlar
     joy_msg.buttons[1] = msg.buttons[5] 
 
       
@@ -114,7 +114,9 @@ if __name__ == "__main__":
             first_run = False
         
         
-
+        """ 
+        R2 için atanan orijinalde ters ile ileri arası geçiş için düşünülen ancak şimdi işe yaramayan mod geçişi kod bloğu.
+        """
         if joy_msg.get_buttons(7) == 1 and not first_stage:
             first_stage = True
 
@@ -141,7 +143,7 @@ if __name__ == "__main__":
 
                     
 
-            rospy.loginfo_throttle(2,"Target X = %s Y = %s Z= %s" %(new_end_point_pos[0], new_end_point_pos[1], new_end_point_pos[2]))
+            rospy.loginfo_throttle(2,"Target X = %s Y = %s Z= %s" %(new_end_point_pos[0], new_end_point_pos[1], new_end_point_pos[2])) #istenilen X Y Z loginfo olarak konsola yazdırılır
 
             rospy.loginfo_throttle(2, "--------------------------------------------------")
 
@@ -149,7 +151,7 @@ if __name__ == "__main__":
 
             referance_coord_point = [4,0,0]
             proj_joint_1 = [new_end_point_pos[0], new_end_point_pos[1], 0.0]       
-            joint_1_angles = angle_of_vectors(proj_joint_1, referance_coord_point)
+            joint_1_angles = angle_of_vectors(proj_joint_1, referance_coord_point) # skaler çarpım ile birinci eksenin dönüş açısını belirleyen fonksiyon
 
             if proj_joint_1[1] < 0:
                 joint_1_angles = joint_1_angles * (-1.0)
@@ -157,7 +159,7 @@ if __name__ == "__main__":
                         
             joint_1_angle_differance += joint_1_angles
 
-            rotate_on_xy(my_joints[0], joint_1_angle_differance)
+            rotate_on_xy(my_joints[0], joint_1_angle_differance) #rotasyon matrisleri birinci eksenin dönüşü için
             rotate_on_xy(my_joints[1], joint_1_angle_differance)
             rotate_on_xy(my_joints[2], joint_1_angle_differance)
             rotate_on_xy(my_joints[3], joint_1_angle_differance)
@@ -189,12 +191,12 @@ if __name__ == "__main__":
             arm.joint_angles[3] += arm.delta_thetas[3]
             arm.joint_angles[4] += arm.delta_thetas[4]
             arm.joint_angles[5] += arm.delta_thetas[5]
-            joint2_last = arm.joint_angles[1]
+            joint2_last = arm.joint_angles[1] # normalde ikinci eksen de ters kinematikle ile sürülecekti ancak x ekseni z eksenine çok bağlı olduğu için optimizasyon amacıyla ikinci eksende ileri kinematiğe alınmıştır.
             joint4_last = arm.joint_angles[3]
             joint5_last = arm.joint_angles[4]
             joint6_last = arm.joint_angles[5]
-
-            rospy.loginfo_throttle(2,"Joint1:%s Joint2:%s Joint3:%s Joint4:%s Joint5:%s Joint6:%s" %(joint1_last, joint2_last, joint3_last, joint4_last, joint5_last, joint6_last))
+            rospy.loginfo_throttle(2, "--------------------------------------------------")
+            rospy.loginfo_throttle(2,"Joint1:%s Joint2:%s Joint3:%s Joint4:%s Joint5:%s Joint6:%s" %(joint1_last, joint2_last, joint3_last, joint4_last, joint5_last, joint6_last)) #jointlerin açısı info olarak veriliyor print yerine loginfo daha iyi çünkü rahatça periyot ayarlanabiliyor throttle da ilk paramtre periyodu gösterir.
                         
             if (joint1_last <= math.pi/4 and joint1_last >= -math.pi/4) or (joint2_last <= 0.01 and joint2_last >= 0.73) or (joint3_last < 0.13 and joint3_last > -0.44):
                 joint_1_publisher.publish(joint1_last)
@@ -214,14 +216,14 @@ if __name__ == "__main__":
                         
                     
                 if counter == 50: 
-                    axis[0] = joint1_last
+                    axis[0] = joint1_last #serial mesajı iin yapılan if bloğu
                     axis[1] = joint2_last
                     axis[2] = joint3_last
                     axis[3] = joint4_last
                     axis[4] = joint5_last
                     axis[5] = joy_msg.buttons[5]
 
-                    message = Float64MultiArray(data=axis)
+                    message = Float64MultiArray(data=axis) #seriale e array gönderiliyor
                     axis_state.publish(message)
                     counter = 0
 
@@ -234,7 +236,7 @@ if __name__ == "__main__":
                 rate.sleep()
 
             else:
-                rospy.logerr("Out Of Boundries.")
+                rospy.logerr("Out Of Boundries.") # Log error sınırların dışına çıkıldı zaman hata mesjı yayınlar.
                 pass
                     
                 
@@ -245,7 +247,7 @@ if __name__ == "__main__":
         else:
 
 
-            rospy.logwarn("Pass")
+            rospy.logwarn("Pass") # Bu mod geçişi işe yaramadığı için warnin mesajı verilir hep.
             pass
 
             
