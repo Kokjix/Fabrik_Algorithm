@@ -170,10 +170,11 @@ if __name__ == "__main__":
             joint_5_angle = find_angle(my_joints[2], my_joints[1], my_joints[3], joint_1_angles)
             joint_3_angle = find_angle(my_joints[1], my_joints[0], my_joints[2], joint_1_angles)
             joint_2_angle = find_angle(my_joints[0], [0.0,0.0,0.0], my_joints[1], joint_1_angles)
-            if frst_rn:
+            
+            if frst_rn: # first runda ilk açılışta seriale hiç tüm açılar sıfır göderiliyor
                 joint_angles = [arm.joint_angles[0], 180 - arm.joint_angles[0], 90.0 - (arm.joint_angles[0]), 0.0, (arm.joint_angles[0] + 180.0) - 270.0]
                 frst_rn = False
-            else:       
+            else: # burda first run bitiyor ve ters kinematik başlıyor       
                 joint_angles = [joint_1_angles, 180 - (joint_2_angle), 90.0 - (joint_3_angle ), 0.0, (joint_5_angle + 180.0) - 270.0]
 
             joint1_last = (joint_angles[0]*math.pi)/180 
