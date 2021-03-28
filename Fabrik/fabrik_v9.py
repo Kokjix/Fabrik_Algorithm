@@ -122,6 +122,8 @@ if __name__ == "__main__":
         
         """ 
         R2 için atanan orijinalde ters ile ileri arası geçiş için düşünülen ancak şimdi işe yaramayan mod geçişi kod bloğu.
+        Neden kaldırmadın derseniz ileri ile ters kinematik geçiş çalışmadığı zaman geçişteki kodlar silindi ancak şu anda kod geliştirilmek istenirse 
+        diye yedek olarak durmakta bu blok.
         """
         if joy_msg.get_buttons(7) == 1 and not first_stage: # R2 tuşuna atanan mod değişim if bloğu
             first_stage = True
@@ -223,7 +225,7 @@ if __name__ == "__main__":
                     joy_msg.buttons[5] = 0
                     joy_msg.buttons[5] = int(joy_msg.buttons[0] * (150))
 
-                if joy_msg.buttons[3] == 1.0: # Dörtüncü eksenin ileri kinematik hız değeri artı yön
+                if joy_msg.buttons[3] == 1.0: # Dördüncü eksenin ileri kinematik hız değeri artı yön
                     m4 = 0
                     m4 = int(joy_msg.buttons[3] * (150))
                 
