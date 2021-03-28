@@ -18,6 +18,7 @@ class F_ARM(object): #ileri kinematik için yazılmıs joint açıları ve deği
         #self.link_lenghts = [26.5, 28.1831, 20.0]
         self.current_pos = [0.0, 0.0, 0.0]
     """
+    #İleri kinematikten ters kinematik için düşünülen dönüşüm fonksiyonu.
     def update_position(self):
         theta_1 = self.joint_angles[0]
         theta_2 = self.joint_angles[1] + math.pi/2
@@ -37,10 +38,10 @@ class F_ARM(object): #ileri kinematik için yazılmıs joint açıları ve deği
         
 
 
-class JOY(object): # joy classı tuşları ve axisleri tutuyor
+class JOY(object): # joy classı tuşları ve axisleri tutuyor ama ana kodda işlevleri oldukça düşük sadece ileri kinematik için hız değerleri için kullanılıyor.
 
     def __init__(self):
-        self.axes = [10.0, 10.0, 10.0, 10.0, 10.0, 10.0]
+        self.axes = [10.0, 10.0, 10.0, 10.0, 10.0, 0.0]
         self.buttons = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     
     def set_axes(self, new_axis_0, new_axis_1, new_axis_2, new_axis_3, new_axis_4, new_axis_5):
@@ -141,8 +142,10 @@ def angle_of_vectors(point1, point2): # vektörlar arası açının hesaplanmas�
 
     return angle
        
-
-def rotate_on_xy(to_be_rotated, angle): # rotasyon matrisi
+""" 
+Bu fonksiyon rotasyon matrisleri için kullanılmaktadır skaler çarpım sonrası birinci eklemin açısı bulunuduktan sonra diğer eklemleri koordinatların noktasını güncellemekte
+"""
+def rotate_on_xy(to_be_rotated, angle): 
     radian_angle = angle * math.pi/180
 
     new_x = (to_be_rotated[0] * math.cos(radian_angle)) - (to_be_rotated[1] * math.sin(radian_angle))
@@ -154,7 +157,7 @@ def rotate_on_xy(to_be_rotated, angle): # rotasyon matrisi
 
     return to_be_rotated
 
-def crd_multipication(point, factor): # vektörün skalerr bir sayı ile çarpımı sonucu koordinatlarını vermekte 
+def crd_multipication(point, factor): # vektörün skalerr bir sayı ile çarpımı sonucu koordinatlarını vermekte fakat orijinal vektörü modifiye etmeden yapmaktadır bunu
     cord = []
     new_x = factor * point[0]
     new_y = factor * point[1]
@@ -175,8 +178,14 @@ def cosinus_theorem(center, one, two): # kosinüs teoremi
 
     return my_angle
 
-
-def find_angle(center, before, nex, joint_1_angle): # Fabrik sonrası açı bulmak için yapılan fonksiyon
+""" 
+Bu fonksiyon eklemlerin konumlarına göre açı bulmak için yapılmıştır Bir eklemin açısını bulmak 3 tane eklem gerekmektedir çünkü bu üç eklemden bir üçgen elde ediklecek.
+ancak bu açı yanlış bulunabilir çünkü ortak yön olarak 0 pozisyonunda X-Y düzlemine bakan yön seçildi ve bulunan açı bu yöndeki açı değil ise, 360'dan çıkarılması
+gerekebilir. Bu durumda vektörel çarpım kullanılır. 3 eklemden orta eklemden bir önceki ekleme giden vektör
+A, orta eklemden bir sonraki ekleme giden vektör B ise AxB işleminin sonuç vektörünün Y bileşenine göre (vektörün X bileşeninin işareti
+de önemli) açı yönü bulunabilir. 
+"""
+def find_angle(center, before, nex, joint_1_angle): 
     my_angle = cosinus_theorem(center, before, nex)
 
     new_before = [before[0] - center[0], before[1] - center[1], before[2] - center[2]]
@@ -184,19 +193,25 @@ def find_angle(center, before, nex, joint_1_angle): # Fabrik sonrası açı bulm
 
     cross_product_y = (new_before[2] * new_next[0]) - (new_before[0] * new_next[2])
 
-    if ((joint_1_angle < 90) and (joint_1_angle > 90)) and cross_product_y > 0:
+    if ((joint_1_angle < 90) and (joint_1_angle > -90)) and cross_product_y > 0:
         my_angle = 360 - my_angle
 
-    if ((joint_1_angle < 90) or (joint_1_angle > 90)) and cross_product_y > 0:
+    if ((joint_1_angle > 90) or (joint_1_angle < -90)) and cross_product_y < 0:
         my_angle = 360 - my_angle
 
     return my_angle
 
 
 
+"""
+FABRIK algoritması psuedo kodun yazıya geçilmiş hali http://andreasaristidou.com/publications/papers/FABRIK.pdf burdan alınmıştır.
+my_joints: eklemlerin koordinatlarını verir
+link_lenghts: robot kolun uzunluklarını tutan liste.
+new_end_point_pos: end efektörün yeni koordinatlarını tutan liste
+REACH: Kolun uzanabileciği maksimum boy 
 
-
-def FABRIK_algorithm(my_joints, link_lenghts, new_end_point_pos, REACH): #FABRIK algoritması psuedo kodun yazıya geçilmiş hali http://andreasaristidou.com/publications/papers/FABRIK.pdf burdan alınmıştır.
+"""
+def FABRIK_algorithm(my_joints, link_lenghts, new_end_point_pos, REACH): 
     #global TOLERANCE
     TOLERANCE = 0.1
     i = 0
@@ -236,8 +251,8 @@ def FABRIK_algorithm(my_joints, link_lenghts, new_end_point_pos, REACH): #FABRIK
                 my_joints[i + 1][0] = crd_multipication(my_joints[i], 1 - lamb)[0] + crd_multipication(my_joints[i+1], lamb)[0]
                 my_joints[i + 1][1] = crd_multipication(my_joints[i], 1 - lamb)[1] + crd_multipication(my_joints[i+1], lamb)[1]
                 my_joints[i + 1][2] = crd_multipication(my_joints[i], 1 - lamb)[2] + crd_multipication(my_joints[i+1], lamb)[2]
-            rospy.loginfo_throttle(2, "--------------------------------------------------")    
-            rospy.loginfo_throttle(2,"Target XF = %s YF = %s ZF = %s" %(new_end_point_pos[0], new_end_point_pos[1], new_end_point_pos[2])) # verilen end effektör konumun Fabriktei dönüşümünü görmek için eklendi   
+            #rospy.loginfo_throttle(2, "--------------------------------------------------")    
+            rospy.loginfo_throttle(2,"Target XF = %s YF = %s ZF = %s" %(new_end_point_pos[0], new_end_point_pos[1], new_end_point_pos[2])) # verilen end effektör konumun Fabrikteki dönüşümünü görmek için eklendi   
             
             distance_to_target = abs(calculate_distance(my_joints[len(my_joints) - 1], new_end_point_pos))
 
