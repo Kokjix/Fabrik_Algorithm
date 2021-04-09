@@ -252,7 +252,7 @@ def FABRIK_algorithm(my_joints, link_lenghts, new_end_point_pos, REACH):
                 my_joints[i + 1][1] = crd_multipication(my_joints[i], 1 - lamb)[1] + crd_multipication(my_joints[i+1], lamb)[1]
                 my_joints[i + 1][2] = crd_multipication(my_joints[i], 1 - lamb)[2] + crd_multipication(my_joints[i+1], lamb)[2]
             #rospy.loginfo_throttle(2, "--------------------------------------------------")    
-            rospy.loginfo_throttle(2,"Target XF = %s YF = %s ZF = %s" %(new_end_point_pos[0], new_end_point_pos[1], new_end_point_pos[2])) # verilen end effektör konumun Fabrikteki dönüşümünü görmek için eklendi   
+            #rospy.loginfo_throttle(2,"Target XF = %s YF = %s ZF = %s" %(new_end_point_pos[0], new_end_point_pos[1], new_end_point_pos[2])) # verilen end effektör konumun Fabrikteki dönüşümünü görmek için eklendi   
             
             distance_to_target = abs(calculate_distance(my_joints[len(my_joints) - 1], new_end_point_pos))
 
